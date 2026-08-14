@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output — regenerate with `npm run build`
+dist/
+
+# Generated documentation — regenerate with `npm run docs`
+apexdocs/
+
+# Backups written by `apexdoc annotate --backup`
+*.cls.bak
+
+# Salesforce CLI tooling cache
+.sfdx/
+.sf/
+
+# Packaging
+*.tgz
+npm-debug.log*
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

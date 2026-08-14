@@ -1,0 +1,40 @@
+{
+  "name": "apex-doc",
+  "version": "1.0.0",
+  "description": "ApexDoc/JavaDoc style documentation generator for Salesforce Apex",
+  "type": "module",
+  "main": "dist/apexdoc/index.js",
+  "types": "dist/apexdoc/index.d.ts",
+  "bin": {
+    "apexdoc": "dist/apexdoc.js"
+  },
+  "files": [
+    "dist/apexdoc.js",
+    "dist/apexdoc.d.ts",
+    "dist/apexdoc/"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "rebuild": "npm run clean && npm run build",
+    "apexdoc": "node dist/apexdoc.js",
+    "docs": "npm run build && node dist/apexdoc.js generate examples -o apexdocs -t \"Apex Demo\"",
+    "check": "npm run build && node dist/apexdoc.js check examples --access private",
+    "test": "npm run build && node --test \"dist/test/*.test.js\""
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@apexdevtools/apex-parser": "^4.4.1",
+    "antlr4ts": "^0.5.0-alpha.4"
+  }
+}

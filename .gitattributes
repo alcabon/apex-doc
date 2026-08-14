@@ -1,0 +1,4 @@
+# Store text files with LF in the repository. The working copy still follows
+# core.autocrlf, and `apexdoc annotate` preserves whatever ending the file on
+# disk already uses, so a CRLF checkout stays CRLF after annotation.
+* text=auto
