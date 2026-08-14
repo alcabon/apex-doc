@@ -3,7 +3,7 @@
 [![Node.js](https://img.shields.io/badge/node-%E2%89%A5%2022-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Salesforce Apex](https://img.shields.io/badge/Salesforce-Apex-00A1E0?logo=salesforce&logoColor=white)](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/)
-[![License](https://img.shields.io/badge/license-ISC-blue)](https://opensource.org/licenses/ISC)
+[![License](https://img.shields.io/badge/license-ISC-blue)](LICENSE.txt)
 [![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code)
 
 A JavaDoc-style documentation generator for Salesforce Apex, built on

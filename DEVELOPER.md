@@ -236,5 +236,6 @@ npm pack            # produces apex-doc-1.0.0.tgz containing only dist/
 
 The `files` field narrows the tarball to `dist/apexdoc.js` and `dist/apexdoc/`,
 so the compiled tests stay out of it; `main`, `types` and `bin` all point inside
-that set. npm adds `package.json` and `README.md` on its own regardless.
-`npm pack --dry-run` lists what would ship without writing the tarball.
+that set. npm adds `package.json`, `README.md` and `LICENSE.txt` on its own
+regardless. `npm pack --dry-run` lists what would ship without writing the
+tarball.
