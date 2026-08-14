@@ -1,0 +1,53 @@
+name: Security audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Mondays at 06:00 UTC. A push-triggered audit only catches advisories that
+    # existed when the tree last changed; this catches CVEs published against a
+    # dependency set that has been sitting still. Scheduled runs only ever fire
+    # on the default branch, and GitHub may delay them under load.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # `npm ci` installs the exact tree from package-lock.json, so the audit
+      # reflects what actually gets installed rather than a fresh resolution.
+      # It also fails outright if package.json and the lockfile disagree.
+      - name: Install from lockfile
+        run: npm ci
+
+      # --audit-level only controls the exit code; the full report is printed
+      # either way, so moderate and low advisories still show up in the log
+      # without failing the run.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high | tee audit.log
+
+      - name: Publish report
+        if: always()
+        run: |
+          {
+            echo '### npm audit'
+            echo
+            echo '```'
+            cat audit.log 2>/dev/null || echo 'No report produced.'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

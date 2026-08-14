@@ -141,6 +141,40 @@ The suite covers the parser (nested generics, modifiers, initializers, error
 recovery), doc-comment binding, the validator, `annotate` (idempotence, CRLF,
 visibility floor) and both renderers (anchor integrity, HTML escaping).
 
+## Continuous integration
+
+[`.github/workflows/security-audit.yml`](.github/workflows/security-audit.yml)
+runs `npm ci` followed by `npm audit --audit-level=high` on every push and pull
+request to `main`, every Monday at 06:00 UTC, and on demand via
+**Actions → Security audit → Run workflow**.
+
+The weekly run is the point of the whole thing: a push-triggered audit only ever
+tells you about advisories that existed the last time the tree changed. Most
+CVEs land against dependencies that have been sitting untouched for months, and
+the schedule is what surfaces those. Note that scheduled workflows only fire on
+the default branch.
+
+`--audit-level=high` sets the *exit code* threshold only — the full report is
+printed regardless, so moderate and low advisories still appear in the log and
+in the run summary without turning the badge red. Tighten it to `moderate` in
+the workflow if you want a stricter gate.
+
+Reproduce it locally with:
+
+```bash
+npm ci                            # exact tree from the lockfile
+npm audit --audit-level=high
+npm audit fix                     # patch/minor bumps only
+npm audit fix --dry-run           # see what it would do first
+```
+
+`npm audit fix --force` is the one to avoid unless you mean it: it accepts
+major-version bumps and can break the build to close an advisory.
+
+This is also where the committed lockfile earns its keep — `npm audit` and
+`npm ci` both require it, and `npm ci` fails loudly if `package.json` and
+`package-lock.json` have drifted apart.
+
 ## Source layout
 
 ```
