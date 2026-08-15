@@ -143,6 +143,24 @@ visibility floor) and both renderers (anchor integrity, HTML escaping).
 
 ## Continuous integration
 
+Two workflows, one badge each in the README.
+
+### Tests
+
+[`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs `npm ci` and
+`npm test` on every push and pull request to `main`, across Node 22 and 26 —
+the minimum `engines.node` declares and the current release, which between them
+bracket the supported range. `fail-fast` is off so one bad version does not hide
+the result on the other.
+
+`npm test` compiles before it runs, so that single step covers the type check,
+the emit and the suite. A second step drives the CLI itself over
+[examples/](examples/) — `generate`, `check`, then `annotate --dry-run` — because
+the suite calls the renderers directly and would not notice the command line
+breaking.
+
+### Security audit
+
 [`.github/workflows/security-audit.yml`](.github/workflows/security-audit.yml)
 runs `npm ci` followed by `npm audit --audit-level=high` on every push and pull
 request to `main`, every Monday at 06:00 UTC, and on demand via

@@ -1,5 +1,6 @@
 # apexdoc
 
+[![Tests](https://github.com/alcabon/apex-doc/actions/workflows/tests.yml/badge.svg)](https://github.com/alcabon/apex-doc/actions/workflows/tests.yml)
 [![Security audit](https://github.com/alcabon/apex-doc/actions/workflows/security-audit.yml/badge.svg)](https://github.com/alcabon/apex-doc/actions/workflows/security-audit.yml)
 [![Node.js](https://img.shields.io/badge/node-%E2%89%A5%2022-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)

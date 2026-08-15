@@ -1,0 +1,48 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      # One failing version should not hide the result on the other.
+      fail-fast: false
+      matrix:
+        # The minimum the package declares, and the current release. Between
+        # them they bracket the range `engines.node` promises to support.
+        node: ['22', '26']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install from lockfile
+        run: npm ci
+
+      # `npm test` compiles first, so this covers the type check, the emit and
+      # the suite in one step.
+      - name: Build and test
+        run: npm test
+
+      # The suite exercises the renderers directly; this proves the CLI itself
+      # still runs end to end over real files on disk.
+      - name: Smoke test the CLI
+        run: |
+          node dist/apexdoc.js generate examples -o "$RUNNER_TEMP/apexdocs" -f html,md,json
+          node dist/apexdoc.js check examples --access private
+          node dist/apexdoc.js annotate examples --dry-run
