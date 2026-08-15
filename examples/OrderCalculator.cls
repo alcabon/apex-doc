@@ -12,7 +12,7 @@ public class OrderCalculator {
     }
 
     /**
-     * Totals one order, VAT included.
+     * @description Totals one order, VAT included.
      *
      * @param orderId Order to total.
      */

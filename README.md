@@ -121,7 +121,7 @@ public class OrderCalculator {
     private static final Decimal VAT_RATE = 0.20;
 
     /**
-     * Totals one order, VAT included.
+     * @description Totals one order, VAT included.
      *
      * @param orderId Order to total.
      */
@@ -155,7 +155,8 @@ public class OrderCalculator {
 
 Summaries are written as an explicit `@description` rather than as bare leading
 prose. Both parse — but the tag is unambiguous for any tool reading the comment
-back, and it is the convention Salesforce's own Apex follows.
+back, and it is the convention Salesforce's own Apex follows, which is why the
+files in [examples/](examples/) are written that way throughout.
 
 #### File header template
 

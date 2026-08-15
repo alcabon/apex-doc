@@ -1,5 +1,5 @@
 /**
- * Service layer for Account records.
+ * @description Service layer for Account records.
  *
  * Wraps the queries and DML the UI controllers need so that sharing rules and
  * validation live in one place.
@@ -7,28 +7,31 @@
  * @author Alain Cabon
  * @date 2026-02-11
  * @since 1.0
+ * @version 1.2.0
  * @group Account Management
  * @see IAccountProcessor
  */
 public with sharing class AccountService {
-    /** Name given to accounts created without one. */
+    /** @description Name given to accounts created without one. */
     private static final String DEFAULT_NAME = 'Unnamed Account';
 
-    /** Number of records touched by the current instance. */
+    /** @description Number of records touched by the current instance. */
     private Integer processedCount = 0;
 
     /**
-     * Accounts indexed by their industry, populated lazily by {@link warmCache}.
+     * @description Accounts indexed by their industry, populated lazily by
+     * {@link warmCache}.
      */
     private Map<String, List<Account>> accountsByIndustry;
 
     /**
-     * Name applied to the next account created by this service.
+     * @description Name applied to the next account created by this service.
      */
     public String pendingName { get; set; }
 
     /**
-     * Number of records processed since the service was instantiated.
+     * @description Number of records processed since the service was
+     * instantiated.
      */
     public Integer processedTotal {
         get {
@@ -37,14 +40,14 @@ public with sharing class AccountService {
     }
 
     /**
-     * Creates a service with an empty counter.
+     * @description Creates a service with an empty counter.
      */
     public AccountService() {
         this.processedCount = 0;
     }
 
     /**
-     * Creates a service that continues an existing count.
+     * @description Creates a service that continues an existing count.
      *
      * @param initialCount Number of records already processed upstream.
      */
@@ -53,16 +56,18 @@ public with sharing class AccountService {
     }
 
     /**
-     * Finds accounts whose name matches a search term.
+     * @description Finds accounts whose name matches a search term.
      *
      * @param searchTerm Fragment matched against `Account.Name`, SOQL wildcards allowed.
      * @param maxResults Upper bound on the number of rows returned.
      * @return Matching accounts, newest first; never null.
      * @throws QueryException When the running user cannot read Account.
      * @example
+     * ```
      * AccountService service = new AccountService();
      * List<Account> hits = service.findAccounts('Acme%', 10);
      * System.debug(hits.size());
+     * ```
      */
     public List<Account> findAccounts(String searchTerm, Integer maxResults) {
         return [
@@ -75,7 +80,7 @@ public with sharing class AccountService {
     }
 
     /**
-     * Loads every account into the industry cache.
+     * @description Loads every account into the industry cache.
      *
      * @return The number of accounts cached.
      */
@@ -93,7 +98,7 @@ public with sharing class AccountService {
     }
 
     /**
-     * Applies a processor to every account in a chunk.
+     * @description Applies a processor to every account in a chunk.
      *
      * @param records Accounts to run through the processor.
      * @param processor Strategy invoked once per record.
@@ -112,7 +117,7 @@ public with sharing class AccountService {
     }
 
     /**
-     * Queues an account for asynchronous enrichment.
+     * @description Queues an account for asynchronous enrichment.
      *
      * @param recordId Identifier of the account to enrich.
      * @deprecated Use `EnrichmentQueueable` instead; `@future` cannot be chained.
@@ -123,29 +128,30 @@ public with sharing class AccountService {
     }
 
     /**
-     * Lifecycle state of an account within the enrichment pipeline.
+     * @description Lifecycle state of an account within the enrichment
+     * pipeline.
      */
     public enum Status {
-        /** Not yet picked up. */
+        /** @description Not yet picked up. */
         PENDING,
-        /** Currently being enriched. */
+        /** @description Currently being enriched. */
         RUNNING,
-        /** Enrichment finished successfully. */
+        /** @description Enrichment finished successfully. */
         DONE
     }
 
     /**
-     * Builds Account records for tests.
+     * @description Builds Account records for tests.
      *
      * @group Testing
      */
     @TestVisible
     private class TestDataFactory {
-        /** Number of records handed out so far. */
+        /** @description Number of records handed out so far. */
         private static Integer created = 0;
 
         /**
-         * Builds one unsaved account.
+         * @description Builds one unsaved account.
          *
          * @return An in-memory account with a unique name.
          */
