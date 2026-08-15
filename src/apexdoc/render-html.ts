@@ -9,6 +9,7 @@
 
 import { INLINE_LINK_RE } from './doc-comment.js';
 import type {
+    ApexDoc,
     ClassInfo,
     ConstructorInfo,
     Documentable,
@@ -21,7 +22,15 @@ import type {
 } from './model.js';
 import { declarationOf, firstSentence, formatParams, walkTypes } from './model.js';
 import type { Page } from './render-shared.js';
-import { escapeHtml, groupsOf, modifierColumn, slugify, typeLabel } from './render-shared.js';
+import {
+    escapeHtml,
+    groupUnknownTags,
+    groupsOf,
+    modifierColumn,
+    slugify,
+    tagLabel,
+    typeLabel,
+} from './render-shared.js';
 import type { ValidationResult } from './validate.js';
 import { formatRatio } from './validate.js';
 
@@ -237,6 +246,7 @@ function typeMetadata(decl: TypeDeclaration, ctx: Context): string {
     if (decl.doc?.version) rows.push(['Version', escapeHtml(decl.doc.version)]);
     if (decl.doc?.group) rows.push(['Group', escapeHtml(decl.doc.group)]);
     if (decl.doc?.see.length) rows.push(['See also', typeRefs(decl.doc.see, ctx)]);
+    rows.push(...customTagRows(decl.doc, ctx));
     rows.push(['Source', `<code>${escapeHtml(decl.file)}</code> line ${decl.anchorLine}`]);
 
     return definitionList(rows);
@@ -411,6 +421,7 @@ function memberDetail(
         rows.push(['Example', `<pre class="example"><code>${escapeHtml(doc.example)}</code></pre>`]);
     }
     if (doc?.see.length) rows.push(['See also', typeRefs(doc.see, ctx)]);
+    rows.push(...customTagRows(doc, ctx));
 
     out.push(definitionList(rows));
     out.push('</section>');
@@ -430,6 +441,15 @@ function summaryTable(headers: string[], rows: string[][]): string {
         })
         .join('\n');
     return `<table class="summary"><thead><tr>${head}</tr></thead><tbody>\n${body}\n</tbody></table>`;
+}
+
+/** One row per custom tag; repeated tags become a list under one heading. */
+function customTagRows(doc: ApexDoc | undefined, ctx: Context): Array<[string, string]> {
+    return groupUnknownTags(doc).map(([tag, values]) => {
+        if (values.length === 1) return [tagLabel(tag), inline(values[0], ctx)] as [string, string];
+        const items = values.map((value) => `<li>${inline(value, ctx)}</li>`).join('');
+        return [tagLabel(tag), `<ul class="params">${items}</ul>`] as [string, string];
+    });
 }
 
 function definitionList(rows: Array<[string, string]>): string {

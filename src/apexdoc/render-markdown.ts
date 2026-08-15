@@ -8,6 +8,7 @@
 
 import { INLINE_LINK_RE } from './doc-comment.js';
 import type {
+    ApexDoc,
     ClassInfo,
     ConstructorInfo,
     EnumInfo,
@@ -18,7 +19,14 @@ import type {
 } from './model.js';
 import { declarationOf, firstSentence, formatParams, walkTypes } from './model.js';
 import type { Page } from './render-shared.js';
-import { groupsOf, modifierColumn, slugify, typeLabel } from './render-shared.js';
+import {
+    groupUnknownTags,
+    groupsOf,
+    modifierColumn,
+    slugify,
+    tagLabel,
+    typeLabel,
+} from './render-shared.js';
 
 /** Renders the whole project as a set of Markdown pages. */
 export function renderMarkdown(project: Project): Page[] {
@@ -124,6 +132,27 @@ function typeMetadata(decl: TypeDeclaration, ctx: Context): string[] {
     rows.push(`**Source:** \`${decl.file}\` (line ${decl.anchorLine})`);
 
     if (rows.length > 0) out.push(rows.join('  \n'), '');
+    out.push(...customTags(decl.doc, ctx));
+    return out;
+}
+
+/**
+ * Custom tags, one block each. A tag that repeats — a `@history` log, say —
+ * becomes a list so the entries stay on separate lines.
+ */
+function customTags(doc: ApexDoc | undefined, ctx: Context): string[] {
+    const out: string[] = [];
+
+    for (const [tag, values] of groupUnknownTags(doc)) {
+        if (values.length === 1) {
+            out.push(`**${tagLabel(tag)}:** ${oneLine(values[0], ctx)}`, '');
+            continue;
+        }
+        out.push(`**${tagLabel(tag)}:**`, '');
+        for (const value of values) out.push(`- ${oneLine(value, ctx)}`);
+        out.push('');
+    }
+
     return out;
 }
 
@@ -269,6 +298,7 @@ function memberDetail(
         out.push(`**See also:** ${doc.see.map((s) => link(s, ctx)).join(', ')}`, '');
     }
 
+    out.push(...customTags(doc, ctx));
     out.push('');
     return out;
 }

@@ -635,6 +635,51 @@ test('keeps Markdown list items on a single line', () => {
     assert.equal(paramLine.includes('\n'), false, 'and folded onto one line');
 });
 
+const WITH_HISTORY = `
+/**
+ * @description A provider.
+ * @history 2.1  2026-08-15  A. Cabon  Rates from custom metadata
+ * @history 1.0  2025-11-20  A. Cabon  Initial version
+ * @jira BILL-1042
+ */
+public class Historied {
+    /**
+     * @description Does a thing.
+     * @history 2.0  2026-03-02  A. Cabon  Extracted from rateFor
+     */
+    public void run() {}
+}
+`;
+
+test('renders custom tags rather than dropping them', () => {
+    const project = projectOf(WITH_HISTORY, 'Historied.cls');
+
+    const md = renderMarkdown(project).find((p) => p.fileName === 'Historied.md')!.content;
+    assert.ok(md.includes('**History:**'), 'repeated tag gets one heading');
+    assert.ok(md.includes('- 2.1  2026-08-15  A. Cabon  Rates from custom metadata'));
+    assert.ok(md.includes('- 1.0  2025-11-20  A. Cabon  Initial version'));
+    // A tag that appears once is inline, not a one-item list.
+    assert.ok(md.includes('**Jira:** BILL-1042'));
+    assert.equal(md.includes('- BILL-1042'), false);
+    // Members carry their own custom tags too.
+    assert.ok(md.includes('**History:** 2.0  2026-03-02  A. Cabon  Extracted from rateFor'));
+
+    const html = renderHtml(project).find((p) => p.fileName === 'Historied.html')!.content;
+    assert.ok(html.includes('<dt>History</dt>'));
+    assert.ok(html.includes('<li>1.0  2025-11-20  A. Cabon  Initial version</li>'));
+    assert.ok(html.includes('<dt>Jira</dt><dd>BILL-1042</dd>'));
+});
+
+test('repeated custom tags keep source order', () => {
+    const doc = parseClass(WITH_HISTORY).doc!;
+    assert.deepEqual(
+        doc.unknownTags.map((t) => t.tag),
+        ['history', 'history', 'jira'],
+    );
+    assert.ok(doc.unknownTags[0].value.startsWith('2.1'));
+    assert.ok(doc.unknownTags[1].value.startsWith('1.0'));
+});
+
 test('renders an HTML site with a page per type', () => {
     const pages = renderHtml(projectOf(RENDERABLE, 'Service.cls'));
     const names = pages.map((page) => page.fileName);

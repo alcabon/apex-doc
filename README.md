@@ -316,8 +316,41 @@ stripped, since the renderers add their own. Tag bodies that wrap across
 several source lines are folded back onto one line where the output needs it,
 such as inside a Markdown list item.
 
-Unrecognised tags are kept in the model (`unknownTags`) rather than dropped, so
-nothing you write is silently lost.
+### Custom tags
+
+Any tag the tool does not know is still rendered, under a heading taken from
+its name — so a house convention needs no support from the generator. A tag
+that repeats becomes a list, which is what makes an inline change log work:
+
+```apex
+/**
+ * @description Resolves the VAT rate that applies to an order line.
+ *
+ * @author Alain Cabon
+ * @since 1.0
+ * @version 2.1
+ *
+ * @history 2.1  2026-08-15  A. Cabon   Rates read from Tax_Rate__mdt
+ * @history 2.0  2026-03-02  A. Cabon   Added reduced-rate categories
+ * @history 1.0  2025-11-20  A. Cabon   Initial version
+ */
+```
+
+renders as a **History** block with one entry per line. See
+[examples/TaxRateProvider.cls](examples/TaxRateProvider.cls).
+
+Two caveats. A tag name cannot contain spaces, so the `@last modified by`
+convention some editors insert parses as a tag named `last` with the value
+`modified by …`. Use a single word — `@modified`, `@history` — or a standard
+tag. And the older habit of pasting a fixed-width `Ver | Date | Author` table
+into the description does not survive rendering, because a description is
+reflowed as prose; one `@history` line per revision does.
+
+Bear in mind that `git log --follow` and `git blame` already record this
+accurately and cannot fall out of date, which is why hand-maintained history
+blocks have largely disappeared from source-controlled Apex. `@since` and
+`@version` cover the same intent without the upkeep. The support is here for
+orgs whose conventions still call for it.
 
 ## Using it as a library
 

@@ -1,6 +1,6 @@
 /** Presentation helpers used by both renderers. */
 
-import type { Documentable, TypeDeclaration } from './model.js';
+import type { ApexDoc, Documentable, TypeDeclaration } from './model.js';
 
 const UNGROUPED = 'Other';
 
@@ -46,6 +46,31 @@ export function groupsOf(types: TypeDeclaration[]): Array<[string, TypeDeclarati
             return a.localeCompare(b);
         })
         .map(([group, members]) => [group, members.sort((x, y) => x.name.localeCompare(y.name))]);
+}
+
+/**
+ * Custom tags, grouped by name and kept in source order.
+ *
+ * Tags the tool does not know about are still rendered — a house convention
+ * such as a repeated `@history` line is worth showing rather than dropping,
+ * and grouping means the repeats land under one heading.
+ */
+export function groupUnknownTags(doc: ApexDoc | undefined): Array<[string, string[]]> {
+    if (!doc || doc.unknownTags.length === 0) return [];
+
+    const byTag = new Map<string, string[]>();
+    for (const { tag, value } of doc.unknownTags) {
+        const bucket = byTag.get(tag);
+        if (bucket) bucket.push(value);
+        else byTag.set(tag, [value]);
+    }
+    return [...byTag.entries()];
+}
+
+/** `history` -> `History`, `group-content` -> `Group content`. */
+export function tagLabel(tag: string): string {
+    const words = tag.replace(/-/g, ' ');
+    return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 /** GitHub-compatible heading anchor, so the Markdown summary links resolve. */
