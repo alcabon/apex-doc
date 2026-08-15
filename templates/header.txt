@@ -1,7 +1,6 @@
 /**
- * {{description}}
- *
+ * @description {{description}}
+ * @group {{group}}
  * @author {{author}}
  * @version {{dateLong}}
- * @group {{placeholder}}
  */

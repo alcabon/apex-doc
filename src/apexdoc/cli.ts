@@ -48,6 +48,7 @@ Options:
       --backup             annotate: keep a .bak copy of every rewritten file
       --header <file>      annotate: file header template for top-level types
       --author <name>      annotate: fills {{author}} in the header template
+      --group <name>       annotate: fills {{group}} in the header template
       --doc-version <text> annotate: fills {{version}} (default: today's date)
       --strict             check: exit 1 on warnings as well as errors
   -h, --help               Show this message
@@ -56,19 +57,21 @@ The file header written above a top-level type comes from a template. The
 built-in one is:
 
   /**
-   * {{description}}
+   * @description {{description}}
+   * @group {{group}}
    * @author {{author}}
    * @version {{version}}
    */
 
 Pass --header to use your own. Placeholders: {{name}}, {{qualifiedName}},
-{{kind}}, {{file}}, {{description}}, {{author}}, {{version}}, {{date}},
-{{dateLong}}, {{year}}, {{placeholder}}. Unknown ones are left as written.
+{{kind}}, {{file}}, {{description}}, {{author}}, {{group}}, {{version}},
+{{date}}, {{dateLong}}, {{year}}, {{placeholder}}. Unknown ones are left as
+written.
 
 Examples:
   apexdoc generate force-app -o docs -f html
   apexdoc annotate force-app/main/default/classes --dry-run
-  apexdoc annotate force-app --author "Justin Jang" --doc-version "June 8, 2020"
+  apexdoc annotate force-app --author "Justin Jang" --group "Data Recipes"
   apexdoc annotate force-app --header templates/header.txt
   apexdoc check force-app --access public --strict
 `;
@@ -146,6 +149,9 @@ function parseArgs(argv: string[]): Options {
             }
             case '--author':
                 options.annotate.author = next(arg);
+                break;
+            case '--group':
+                options.annotate.group = next(arg);
                 break;
             // Not `--version`: that conventionally prints the tool's own
             // version, and this fills the @version tag in generated headers.

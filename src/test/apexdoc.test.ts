@@ -297,8 +297,8 @@ const UNDOCUMENTED = `public class Todo {
 test('inserts stubs and completes existing comments', () => {
     const result = annotateSource(UNDOCUMENTED, 'Todo.cls');
 
-    assert.ok(result.output.includes('/** TODO: describe count. */'));
-    assert.ok(result.output.includes(' * TODO: describe Todo.'));
+    assert.ok(result.output.includes('/** @description TODO: describe count. */'));
+    assert.ok(result.output.includes(' * @description TODO: describe Todo.'));
     assert.ok(result.output.includes(' * @param twice TODO'));
     assert.ok(result.output.includes(' * @return TODO'));
     // The tags are added to the comment that is already there, not a new one.
@@ -355,13 +355,15 @@ test('writes a file header above a top-level type', () => {
         ...DEFAULT_ANNOTATE_OPTIONS,
         author: 'Justin Jang',
         version: 'June 8, 2020',
+        group: 'Data Recipes',
     });
 
     assert.equal(
-        result.output.split('\n').slice(0, 5).join('\n'),
+        result.output.split('\n').slice(0, 6).join('\n'),
         [
             '/**',
-            ' * TODO: describe Header.',
+            ' * @description TODO: describe Header.',
+            ' * @group Data Recipes',
             ' * @author Justin Jang',
             ' * @version June 8, 2020',
             ' */',
@@ -376,6 +378,7 @@ test('header falls back to the placeholder and today for author and version', ()
     const output = annotateSource('public class Fallback {}\n', 'Fallback.cls').output;
 
     assert.ok(output.includes(' * @author TODO'));
+    assert.ok(output.includes(' * @group TODO'));
     assert.ok(output.includes(` * @version ${today}`));
 });
 
@@ -418,7 +421,7 @@ test('the header applies to top-level types only', () => {
     ).output;
 
     assert.equal(output.match(/@author/g)?.length, 1, 'only the outer type gets a header');
-    assert.ok(output.includes('TODO: describe Inner.'));
+    assert.ok(output.includes('@description TODO: describe Inner.'));
 });
 
 test('interfaces and enums get the header too', () => {
@@ -440,6 +443,41 @@ test('a generated header parses back, @version included', () => {
     assert.equal(info.doc?.author, 'Justin Jang');
     assert.equal(info.doc?.version, 'June 8, 2020');
     assert.deepEqual(info.doc?.unknownTags, [], '@version must not fall through as unknown');
+});
+
+test('parses a real Salesforce header, multi-line @description included', () => {
+    // Verbatim from the shape used across Salesforce's apex-recipes.
+    const info = parseClass(`/**
+ * @description Demonstrates how to make various types of SOQL calls
+ * including multi-object queries, and aggregate queries
+ * @group Data Recipes
+ */
+public with sharing class SOQLRecipes {
+}
+`);
+
+    assert.equal(
+        info.doc?.description,
+        'Demonstrates how to make various types of SOQL calls\n' +
+            'including multi-object queries, and aggregate queries',
+    );
+    assert.equal(info.doc?.group, 'Data Recipes');
+    assert.deepEqual(info.doc?.unknownTags, []);
+});
+
+test('a generated header round-trips as an explicit @description', () => {
+    // What annotate writes must parse back to the same summary a human would
+    // have written as bare prose.
+    const annotated = annotateSource('public class Tagged {}\n', 'Tagged.cls', {
+        ...DEFAULT_ANNOTATE_OPTIONS,
+        group: 'Data Recipes',
+    }).output;
+
+    assert.ok(annotated.includes(' * @description TODO: describe Tagged.'));
+
+    const info = parseClass(annotated);
+    assert.equal(info.doc?.description, 'TODO: describe Tagged.');
+    assert.equal(info.doc?.group, 'Data Recipes');
 });
 
 test('the built-in template is a well-formed comment', () => {

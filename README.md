@@ -67,6 +67,7 @@ apexdoc check    <path...> [options]   Report undocumented or inconsistent membe
       --backup             annotate: keep a .bak copy of every rewritten file
       --header <file>      annotate: file header template for top-level types
       --author <name>      annotate: fills {{author}} in the header template
+      --group <name>       annotate: fills {{group}} in the header template
       --doc-version <text> annotate: fills {{version}} (default: today's date)
       --strict             check: exit 1 on warnings as well as errors
   -h, --help               Show this message
@@ -132,10 +133,13 @@ it produces:
 
 ```apex
 /**
- * TODO: describe OrderCalculator.
+ * @description TODO: describe OrderCalculator.
+ * @group TODO
+ * @author TODO
+ * @version 2026-08-15
  */
 public class OrderCalculator {
-    /** TODO: describe VAT_RATE. */
+    /** @description TODO: describe VAT_RATE. */
     private static final Decimal VAT_RATE = 0.20;
 
     /**
@@ -149,6 +153,10 @@ public class OrderCalculator {
 }
 ```
 
+Summaries are written as an explicit `@description` rather than as bare leading
+prose. Both parse — but the tag is unambiguous for any tool reading the comment
+back, and it is the convention Salesforce's own Apex follows.
+
 #### File header template
 
 A **top-level** type gets a file header rather than the plain stub. The
@@ -156,28 +164,31 @@ built-in template is:
 
 ```
 /**
- * {{description}}
+ * @description {{description}}
+ * @group {{group}}
  * @author {{author}}
  * @version {{version}}
  */
 ```
 
 ```bash
-node dist/apexdoc.js annotate Temperature.cls \
-  --author "Justin Jang" --doc-version "June 8, 2020"
+node dist/apexdoc.js annotate SOQLRecipes.cls \
+  --author "Justin Jang" --group "Data Recipes"
 ```
 
 ```apex
 /**
- * TODO: describe Temperature.
+ * @description TODO: describe SOQLRecipes.
+ * @group Data Recipes
  * @author Justin Jang
- * @version June 8, 2020
+ * @version 2026-08-15
  */
-public class Temperature {
+public with sharing class SOQLRecipes {
 ```
 
-`--author` defaults to the `--placeholder` text and `--doc-version` to today's
-date, so the header is useful even with no flags at all.
+`--author` and `--group` default to the `--placeholder` text and
+`--doc-version` to today's date, so the header is useful even with no flags at
+all. `@group` is worth filling in: it is what organises the overview page.
 
 Supply your own layout with `--header <file>` — the file holds the whole comment
 block, `/**` and `*/` included:
@@ -193,6 +204,7 @@ node dist/apexdoc.js annotate force-app --header templates/header.txt --author "
 | `{{kind}}` | `class`, `interface` or `enum` |
 | `{{file}}` | Path of the source file |
 | `{{author}}` | `--author`, or the placeholder |
+| `{{group}}` | `--group`, or the placeholder |
 | `{{version}}` | `--doc-version`, or today's date |
 | `{{date}}` / `{{dateLong}}` | `2026-08-15` / `August 15, 2026` |
 | `{{year}}` | `2026` |
@@ -248,6 +260,17 @@ accepted, so either of these works:
 ```apex
 /** Finds accounts by name. */
 /** @description Finds accounts by name. */
+```
+
+`annotate` generates the tagged form. A `@description` may run over several
+lines — every line up to the next tag belongs to it:
+
+```apex
+/**
+ * @description Demonstrates how to make various types of SOQL calls
+ * including multi-object queries, and aggregate queries
+ * @group Data Recipes
+ */
 ```
 
 | Tag | Applies to |

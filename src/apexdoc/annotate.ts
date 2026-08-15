@@ -23,7 +23,8 @@ import { isVisibleAtLeast, membersOf, walkTypes } from './model.js';
  * rather than blanked, so a typo in a custom template is visible in the output.
  */
 export const DEFAULT_HEADER_TEMPLATE = `/**
- * {{description}}
+ * @description {{description}}
+ * @group {{group}}
  * @author {{author}}
  * @version {{version}}
  */`;
@@ -41,6 +42,8 @@ export interface AnnotateOptions {
     author: string;
     /** Fills `{{version}}`. Empty falls back to today's date. */
     version: string;
+    /** Fills `{{group}}`. Empty falls back to `placeholder`. */
+    group: string;
 }
 
 export const DEFAULT_ANNOTATE_OPTIONS: AnnotateOptions = {
@@ -50,6 +53,7 @@ export const DEFAULT_ANNOTATE_OPTIONS: AnnotateOptions = {
     headerTemplate: DEFAULT_HEADER_TEMPLATE,
     author: '',
     version: '',
+    group: '',
 };
 
 export interface AnnotateChange {
@@ -108,9 +112,15 @@ function missingTags(member: Documentable, doc: ApexDoc | undefined, placeholder
     return tags;
 }
 
-/** The comment block generated for an undocumented element. */
+/**
+ * The comment block generated for an undocumented element.
+ *
+ * The summary is written as an explicit `@description` rather than as bare
+ * leading prose. Both parse, but the tag is unambiguous for any tool reading
+ * the comment back, and it matches the convention Salesforce's own Apex uses.
+ */
 function stubFor(member: Documentable, placeholder: string): string[] {
-    const description = `${placeholder}: describe ${member.name}.`;
+    const description = `@description ${placeholder}: describe ${member.name}.`;
     const tags = missingTags(member, undefined, placeholder);
 
     // Fields and properties read better on one line; types and callables keep
@@ -165,6 +175,7 @@ function renderHeader(
         description: `${options.placeholder}: describe ${decl.name}.`,
         author: options.author || options.placeholder,
         version: options.version || iso,
+        group: options.group || options.placeholder,
         date: iso,
         dateLong: `${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`,
         year: String(now.getFullYear()),
