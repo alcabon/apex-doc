@@ -220,7 +220,14 @@ to the grammar or the parser version can only ever break `extractor.ts`.
 **Add a doc tag.** Add the field to `ApexDoc` in `model.ts`, add a `case` in
 `saveTag`'s switch in `doc-comment.ts`, add it to `KNOWN_TAGS`, then surface it
 in `typeMetadata`/`memberDetail` in each renderer. Skip the last step and the
-tag still parses — it just does not appear in the output.
+tag still parses — it just does not appear in the output. `@version` is the
+worked example: four small edits across those four files.
+
+**Change the generated file header.** `DEFAULT_HEADER_TEMPLATE` in
+`annotate.ts` holds the built-in block, and `renderHeader` builds the
+placeholder map that fills it. Adding a placeholder means one entry in that
+`values` record — the substitution and the leave-unknown-tags-alone behaviour
+come for free. A template is only ever applied to a type with `isInner === false`.
 
 **Add a validation rule.** Add a `this.add(...)` call in `Validator.checkMember`
 or `checkType` in `validate.ts` with a new `rule` slug, and list it in the

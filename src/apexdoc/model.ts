@@ -38,6 +38,7 @@ export interface ApexDoc {
     author?: string;
     date?: string;
     since?: string;
+    version?: string;
     group?: string;
     groupContent?: string;
     see: string[];

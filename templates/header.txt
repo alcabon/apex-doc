@@ -1,0 +1,7 @@
+/**
+ * {{description}}
+ *
+ * @author {{author}}
+ * @version {{dateLong}}
+ * @group {{placeholder}}
+ */

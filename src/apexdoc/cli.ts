@@ -46,12 +46,30 @@ Options:
       --no-complete        annotate: leave existing comments untouched
       --dry-run            annotate: report the changes without writing
       --backup             annotate: keep a .bak copy of every rewritten file
+      --header <file>      annotate: file header template for top-level types
+      --author <name>      annotate: fills {{author}} in the header template
+      --doc-version <text> annotate: fills {{version}} (default: today's date)
       --strict             check: exit 1 on warnings as well as errors
   -h, --help               Show this message
+
+The file header written above a top-level type comes from a template. The
+built-in one is:
+
+  /**
+   * {{description}}
+   * @author {{author}}
+   * @version {{version}}
+   */
+
+Pass --header to use your own. Placeholders: {{name}}, {{qualifiedName}},
+{{kind}}, {{file}}, {{description}}, {{author}}, {{version}}, {{date}},
+{{dateLong}}, {{year}}, {{placeholder}}. Unknown ones are left as written.
 
 Examples:
   apexdoc generate force-app -o docs -f html
   apexdoc annotate force-app/main/default/classes --dry-run
+  apexdoc annotate force-app --author "Justin Jang" --doc-version "June 8, 2020"
+  apexdoc annotate force-app --header templates/header.txt
   apexdoc check force-app --access public --strict
 `;
 
@@ -114,6 +132,25 @@ function parseArgs(argv: string[]): Options {
                 break;
             case '--placeholder':
                 options.annotate.placeholder = next(arg);
+                break;
+            case '--header': {
+                const file = next(arg);
+                try {
+                    options.annotate.headerTemplate = fs
+                        .readFileSync(file, 'utf8')
+                        .replace(/\r?\n$/, '');
+                } catch {
+                    throw new UsageError(`Cannot read header template: ${file}`);
+                }
+                break;
+            }
+            case '--author':
+                options.annotate.author = next(arg);
+                break;
+            // Not `--version`: that conventionally prints the tool's own
+            // version, and this fills the @version tag in generated headers.
+            case '--doc-version':
+                options.annotate.version = next(arg);
                 break;
             case '--no-complete':
                 options.annotate.completeExisting = false;

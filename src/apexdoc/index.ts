@@ -24,6 +24,7 @@ export type { Page } from './render-shared.js';
 export {
     annotateSource,
     DEFAULT_ANNOTATE_OPTIONS,
+    DEFAULT_HEADER_TEMPLATE,
     type AnnotateChange,
     type AnnotateOptions,
     type AnnotateResult,

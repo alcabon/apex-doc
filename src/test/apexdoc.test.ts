@@ -7,7 +7,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { annotateSource } from '../apexdoc/annotate.js';
+import {
+    DEFAULT_ANNOTATE_OPTIONS,
+    DEFAULT_HEADER_TEMPLATE,
+    annotateSource,
+} from '../apexdoc/annotate.js';
 import { parseApexSource } from '../apexdoc/extractor.js';
 import type { ClassInfo, EnumInfo, InterfaceInfo, Project } from '../apexdoc/model.js';
 import { renderHtml } from '../apexdoc/render-html.js';
@@ -334,13 +338,126 @@ test('preserves CRLF line endings', () => {
 
 test('respects the visibility floor', () => {
     const result = annotateSource(UNDOCUMENTED, 'Todo.cls', {
-        placeholder: 'TODO',
+        ...DEFAULT_ANNOTATE_OPTIONS,
         minVisibility: 'public',
-        completeExisting: true,
     });
 
     assert.equal(result.output.includes('describe count'), false, 'private field is skipped');
     assert.ok(result.output.includes('describe reset'), 'public method is annotated');
+});
+
+// ---------------------------------------------------------------------------
+// File header template
+// ---------------------------------------------------------------------------
+
+test('writes a file header above a top-level type', () => {
+    const result = annotateSource('public class Header {}\n', 'Header.cls', {
+        ...DEFAULT_ANNOTATE_OPTIONS,
+        author: 'Justin Jang',
+        version: 'June 8, 2020',
+    });
+
+    assert.equal(
+        result.output.split('\n').slice(0, 5).join('\n'),
+        [
+            '/**',
+            ' * TODO: describe Header.',
+            ' * @author Justin Jang',
+            ' * @version June 8, 2020',
+            ' */',
+        ].join('\n'),
+    );
+});
+
+test('header falls back to the placeholder and today for author and version', () => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const output = annotateSource('public class Fallback {}\n', 'Fallback.cls').output;
+
+    assert.ok(output.includes(' * @author TODO'));
+    assert.ok(output.includes(` * @version ${today}`));
+});
+
+test('a custom header template replaces the built-in one', () => {
+    const template = [
+        '/**',
+        ' * {{description}}',
+        ' *',
+        ' * @author {{author}}',
+        ' * @since {{dateLong}}',
+        ' * @group {{kind}} from {{file}}',
+        ' */',
+    ].join('\n');
+
+    const output = annotateSource('public class Custom {}\n', 'app/Custom.cls', {
+        ...DEFAULT_ANNOTATE_OPTIONS,
+        headerTemplate: template,
+        author: 'Ada',
+    }).output;
+
+    assert.ok(output.includes(' * @author Ada'));
+    assert.ok(output.includes(' * @group class from app/Custom.cls'));
+    assert.match(output, / \* @since [A-Z][a-z]+ \d{1,2}, \d{4}$/m);
+    assert.equal(output.includes('@version'), false, 'built-in template not used');
+});
+
+test('an unknown placeholder is left visible rather than blanked', () => {
+    const output = annotateSource('public class Typo {}\n', 'Typo.cls', {
+        ...DEFAULT_ANNOTATE_OPTIONS,
+        headerTemplate: '/** {{nmae}} */',
+    }).output;
+
+    assert.ok(output.includes('{{nmae}}'));
+});
+
+test('the header applies to top-level types only', () => {
+    const output = annotateSource(
+        'public class Outer {\n    private class Inner {}\n}\n',
+        'Outer.cls',
+    ).output;
+
+    assert.equal(output.match(/@author/g)?.length, 1, 'only the outer type gets a header');
+    assert.ok(output.includes('TODO: describe Inner.'));
+});
+
+test('interfaces and enums get the header too', () => {
+    for (const source of ['public interface I {}\n', 'public enum E { A }\n']) {
+        const output = annotateSource(source, 'T.cls').output;
+        assert.ok(output.includes('@author'), source);
+    }
+});
+
+test('a generated header parses back, @version included', () => {
+    const annotated = annotateSource('public class RoundTrip {}\n', 'RoundTrip.cls', {
+        ...DEFAULT_ANNOTATE_OPTIONS,
+        author: 'Justin Jang',
+        version: 'June 8, 2020',
+    }).output;
+
+    const info = parseClass(annotated);
+    assert.equal(info.doc?.description, 'TODO: describe RoundTrip.');
+    assert.equal(info.doc?.author, 'Justin Jang');
+    assert.equal(info.doc?.version, 'June 8, 2020');
+    assert.deepEqual(info.doc?.unknownTags, [], '@version must not fall through as unknown');
+});
+
+test('the built-in template is a well-formed comment', () => {
+    assert.ok(DEFAULT_HEADER_TEMPLATE.startsWith('/**'));
+    assert.ok(DEFAULT_HEADER_TEMPLATE.endsWith('*/'));
+});
+
+test('@version reaches both renderers', () => {
+    const project = projectOf(
+        '/**\n * A service.\n * @version 2.1.0\n */\npublic class Versioned {}\n',
+        'Versioned.cls',
+    );
+
+    const md = renderMarkdown(project).find((p) => p.fileName === 'Versioned.md')!;
+    assert.ok(md.content.includes('**Version:** 2.1.0'));
+
+    const html = renderHtml(project).find((p) => p.fileName === 'Versioned.html')!;
+    assert.ok(html.content.includes('<dt>Version</dt><dd>2.1.0</dd>'));
 });
 
 // ---------------------------------------------------------------------------

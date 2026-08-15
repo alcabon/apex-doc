@@ -116,6 +116,7 @@ function typeMetadata(decl: TypeDeclaration, ctx: Context): string[] {
     if (decl.doc?.author) rows.push(`**Author:** ${decl.doc.author}`);
     if (decl.doc?.date) rows.push(`**Date:** ${decl.doc.date}`);
     if (decl.doc?.since) rows.push(`**Since:** ${decl.doc.since}`);
+    if (decl.doc?.version) rows.push(`**Version:** ${decl.doc.version}`);
     if (decl.doc?.group) rows.push(`**Group:** ${decl.doc.group}`);
     if (decl.doc?.see.length) {
         rows.push(`**See also:** ${decl.doc.see.map((s) => link(s, ctx)).join(', ')}`);

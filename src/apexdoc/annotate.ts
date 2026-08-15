@@ -14,6 +14,20 @@ import { parseApexSource } from './extractor.js';
 import type { ApexDoc, Documentable, TypeDeclaration, Visibility } from './model.js';
 import { isVisibleAtLeast, membersOf, walkTypes } from './model.js';
 
+/**
+ * Comment block generated above a top-level type when it has none.
+ *
+ * Placeholders are `{{name}}`, `{{qualifiedName}}`, `{{kind}}`, `{{file}}`,
+ * `{{description}}`, `{{author}}`, `{{version}}`, `{{date}}`, `{{dateLong}}`,
+ * `{{year}}` and `{{placeholder}}`. An unrecognised `{{tag}}` is left in place
+ * rather than blanked, so a typo in a custom template is visible in the output.
+ */
+export const DEFAULT_HEADER_TEMPLATE = `/**
+ * {{description}}
+ * @author {{author}}
+ * @version {{version}}
+ */`;
+
 export interface AnnotateOptions {
     /** Text used where a human has to fill in a description. */
     placeholder: string;
@@ -21,12 +35,21 @@ export interface AnnotateOptions {
     minVisibility: Visibility;
     /** Add missing `@param`/`@return` to comments that already exist. */
     completeExisting: boolean;
+    /** Template for the file header comment above a top-level type. */
+    headerTemplate: string;
+    /** Fills `{{author}}`. Empty falls back to `placeholder`. */
+    author: string;
+    /** Fills `{{version}}`. Empty falls back to today's date. */
+    version: string;
 }
 
 export const DEFAULT_ANNOTATE_OPTIONS: AnnotateOptions = {
     placeholder: 'TODO',
     minVisibility: 'private',
     completeExisting: true,
+    headerTemplate: DEFAULT_HEADER_TEMPLATE,
+    author: '',
+    version: '',
 };
 
 export interface AnnotateChange {
@@ -109,6 +132,50 @@ function indented(lines: string[], indent: string): string[] {
     return lines.map((line) => (line ? indent + line : line));
 }
 
+/** True for a type declared at file level, the one that gets the header. */
+function isTopLevelType(member: Documentable): member is TypeDeclaration {
+    return (
+        (member.kind === 'class' || member.kind === 'interface' || member.kind === 'enum') &&
+        !member.isInner
+    );
+}
+
+function pad(value: number): string {
+    return String(value).padStart(2, '0');
+}
+
+const MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** Expands the file header template for one top-level type. */
+function renderHeader(
+    decl: TypeDeclaration,
+    options: AnnotateOptions,
+    now = new Date(),
+): string[] {
+    const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    const values: Record<string, string> = {
+        name: decl.name,
+        qualifiedName: decl.qualifiedName,
+        kind: decl.kind,
+        file: decl.file,
+        description: `${options.placeholder}: describe ${decl.name}.`,
+        author: options.author || options.placeholder,
+        version: options.version || iso,
+        date: iso,
+        dateLong: `${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`,
+        year: String(now.getFullYear()),
+        placeholder: options.placeholder,
+    };
+
+    return options.headerTemplate
+        .replace(/\{\{(\w+)\}\}/g, (all, key: string) => values[key] ?? all)
+        .split(/\r?\n/);
+}
+
 /**
  * Extends an existing comment with the tags it lacks.
  * Returns `undefined` when the comment cannot be edited safely.
@@ -176,10 +243,16 @@ export function annotateSource(
         if (!isVisibleAtLeast(member.visibility, options.minVisibility)) continue;
 
         if (!member.doc) {
+            // A top-level type gets the file header template; everything else
+            // gets the plain stub.
+            const block = isTopLevelType(member)
+                ? renderHeader(member, options)
+                : stubFor(member, options.placeholder);
+
             edits.push({
                 start: member.anchorLine,
                 deleteCount: 0,
-                lines: indented(stubFor(member, options.placeholder), member.indent),
+                lines: indented(block, member.indent),
             });
             changes.push({
                 line: member.anchorLine,

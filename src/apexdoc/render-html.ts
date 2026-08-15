@@ -234,6 +234,7 @@ function typeMetadata(decl: TypeDeclaration, ctx: Context): string {
     if (decl.doc?.author) rows.push(['Author', escapeHtml(decl.doc.author)]);
     if (decl.doc?.date) rows.push(['Date', escapeHtml(decl.doc.date)]);
     if (decl.doc?.since) rows.push(['Since', escapeHtml(decl.doc.since)]);
+    if (decl.doc?.version) rows.push(['Version', escapeHtml(decl.doc.version)]);
     if (decl.doc?.group) rows.push(['Group', escapeHtml(decl.doc.group)]);
     if (decl.doc?.see.length) rows.push(['See also', typeRefs(decl.doc.see, ctx)]);
     rows.push(['Source', `<code>${escapeHtml(decl.file)}</code> line ${decl.anchorLine}`]);

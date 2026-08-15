@@ -24,6 +24,7 @@ const KNOWN_TAGS = new Set([
     'author',
     'date',
     'since',
+    'version',
     'group',
     'group-content',
     'see',
@@ -153,6 +154,9 @@ export function parseDocComment(raw: string, line: number): ApexDoc {
                 break;
             case 'since':
                 doc.since = content;
+                break;
+            case 'version':
+                doc.version = content;
                 break;
             case 'group':
                 doc.group = content;

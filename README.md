@@ -65,6 +65,9 @@ apexdoc check    <path...> [options]   Report undocumented or inconsistent membe
       --no-complete        annotate: leave existing comments untouched
       --dry-run            annotate: report the changes without writing
       --backup             annotate: keep a .bak copy of every rewritten file
+      --header <file>      annotate: file header template for top-level types
+      --author <name>      annotate: fills {{author}} in the header template
+      --doc-version <text> annotate: fills {{version}} (default: today's date)
       --strict             check: exit 1 on warnings as well as errors
   -h, --help               Show this message
 ```
@@ -146,8 +149,61 @@ public class OrderCalculator {
 }
 ```
 
+#### File header template
+
+A **top-level** type gets a file header rather than the plain stub. The
+built-in template is:
+
+```
+/**
+ * {{description}}
+ * @author {{author}}
+ * @version {{version}}
+ */
+```
+
+```bash
+node dist/apexdoc.js annotate Temperature.cls \
+  --author "Justin Jang" --doc-version "June 8, 2020"
+```
+
+```apex
+/**
+ * TODO: describe Temperature.
+ * @author Justin Jang
+ * @version June 8, 2020
+ */
+public class Temperature {
+```
+
+`--author` defaults to the `--placeholder` text and `--doc-version` to today's
+date, so the header is useful even with no flags at all.
+
+Supply your own layout with `--header <file>` — the file holds the whole comment
+block, `/**` and `*/` included:
+
+```bash
+node dist/apexdoc.js annotate force-app --header templates/header.txt --author "Justin Jang"
+```
+
+| Placeholder | Expands to |
+| --- | --- |
+| `{{description}}` | `TODO: describe <Name>.` — the generated summary line |
+| `{{name}}` / `{{qualifiedName}}` | `Temperature` / `Outer.Inner` |
+| `{{kind}}` | `class`, `interface` or `enum` |
+| `{{file}}` | Path of the source file |
+| `{{author}}` | `--author`, or the placeholder |
+| `{{version}}` | `--doc-version`, or today's date |
+| `{{date}}` / `{{dateLong}}` | `2026-08-15` / `August 15, 2026` |
+| `{{year}}` | `2026` |
+| `{{placeholder}}` | The `--placeholder` text |
+
+An unrecognised `{{tag}}` is left in the output verbatim rather than blanked, so
+a typo in a custom template is visible instead of silent.
+
 Notes:
 
+- Nested types keep the plain stub — the header is per file, not per class.
 - Existing prose is never rewritten; only missing tags are appended.
 - The file's line endings are preserved (CRLF stays CRLF).
 - `annotate` documents everything by default, private members included. Pass
@@ -200,7 +256,7 @@ accepted, so either of these works:
 | `@param <name> <text>` | methods, constructors |
 | `@return` / `@returns` | methods |
 | `@throws` / `@exception` | methods, constructors |
-| `@author`, `@date`, `@since` | types |
+| `@author`, `@date`, `@since`, `@version` | types |
 | `@group`, `@group-content` | types — `@group` becomes the section in the overview |
 | `@see` | everything |
 | `@example` | everything — rendered as an Apex code block, indentation preserved |
