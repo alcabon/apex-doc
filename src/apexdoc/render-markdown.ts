@@ -240,24 +240,26 @@ function memberDetail(
     out.push('```apex', declarationOf(member), '```', '');
 
     const doc = member.doc;
-    if (doc?.deprecated) out.push(`> **Deprecated.** ${inline(doc.deprecated, ctx)}`, '');
+    if (doc?.deprecated) out.push(`> **Deprecated.** ${oneLine(doc.deprecated, ctx)}`, '');
     if (doc?.description) out.push(inline(doc.description, ctx), '');
 
     if (member.parameters.length > 0) {
         out.push('**Parameters:**', '');
         for (const param of member.parameters) {
             const text = doc?.params.find((p) => p.name === param.name)?.description ?? '';
-            out.push(`- \`${param.name}\` — \`${param.type}\`${text ? ` — ${inline(text, ctx)}` : ''}`);
+            out.push(`- \`${param.name}\` — \`${param.type}\`${text ? ` — ${oneLine(text, ctx)}` : ''}`);
         }
         out.push('');
     }
 
-    if (doc?.returns) out.push(`**Returns:** ${inline(doc.returns, ctx)}`, '');
+    if (doc?.returns) out.push(`**Returns:** ${oneLine(doc.returns, ctx)}`, '');
 
     if (doc?.throws.length) {
         out.push('**Throws:**', '');
         for (const thrown of doc.throws) {
-            out.push(`- ${link(thrown.type, ctx)}${thrown.description ? ` — ${inline(thrown.description, ctx)}` : ''}`);
+            out.push(
+                `- ${link(thrown.type, ctx)}${thrown.description ? ` — ${oneLine(thrown.description, ctx)}` : ''}`,
+            );
         }
         out.push('');
     }
@@ -285,10 +287,21 @@ function fieldSummary(field: FieldInfo): string {
     return summary ? `${summary} Default: \`${field.initializer}\`.` : `Default: \`${field.initializer}\`.`;
 }
 
+/**
+ * Flattens wrapped text onto one line.
+ *
+ * A tag body may be wrapped across several source lines. Emitting those line
+ * breaks inside a Markdown list item relies on lazy continuation, which not
+ * every renderer implements the same way — so collapse them instead.
+ */
+function oneLine(text: string, ctx: Context): string {
+    return inline(text, ctx).replace(/\s*\n+\s*/g, ' ').trim();
+}
+
 /** Squeezes text into a single table cell. */
 function cell(text: string | undefined, ctx: Context): string {
     if (!text) return '';
-    return inline(text, ctx).replace(/\s*\n+\s*/g, ' ').replace(/\|/g, '\\|');
+    return oneLine(text, ctx).replace(/\|/g, '\\|');
 }
 
 /** Expands `{@link X}` into a Markdown link when `X` is a documented type. */

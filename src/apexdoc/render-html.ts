@@ -487,14 +487,59 @@ function anchorOfMember(owner: TypeDeclaration, member: Documentable): string {
 // Text formatting
 // ---------------------------------------------------------------------------
 
-/** Blank-line separated prose becomes paragraphs. */
+/**
+ * Turns a description into paragraphs and lists.
+ *
+ * Doc comments are written as light Markdown: blank lines separate paragraphs,
+ * and `*` or `-` at the start of a line begins a bullet. A wrapped bullet is
+ * indented on its continuation lines, which is how those are told apart from
+ * the start of a new paragraph.
+ */
 function paragraphs(text: string, ctx: Context): string {
-    return text
-        .split(/\n\s*\n/)
-        .map((block) => block.trim())
-        .filter(Boolean)
-        .map((block) => `<p>${inline(block, ctx)}</p>`)
-        .join('\n');
+    const out: string[] = [];
+    let prose: string[] = [];
+    let items: string[] = [];
+
+    const flushProse = (): void => {
+        if (prose.length === 0) return;
+        out.push(`<p>${inline(prose.join(' '), ctx)}</p>`);
+        prose = [];
+    };
+
+    const flushList = (): void => {
+        if (items.length === 0) return;
+        const rendered = items.map((item) => `<li>${inline(item, ctx)}</li>`).join('');
+        out.push(`<ul class="doc-list">${rendered}</ul>`);
+        items = [];
+    };
+
+    for (const line of text.split('\n')) {
+        if (!line.trim()) {
+            flushProse();
+            flushList();
+            continue;
+        }
+
+        const bullet = line.match(/^\s*[*-]\s+(.*)$/);
+        if (bullet) {
+            flushProse();
+            items.push(bullet[1]);
+            continue;
+        }
+
+        // Indented under an open bullet: a wrapped continuation of that item.
+        if (items.length > 0 && /^\s/.test(line)) {
+            items[items.length - 1] += ` ${line.trim()}`;
+            continue;
+        }
+
+        flushList();
+        prose.push(line.trim());
+    }
+
+    flushProse();
+    flushList();
+    return out.join('\n');
 }
 
 /**
@@ -678,6 +723,8 @@ dl.tags dd { margin: 0; min-width: 0; }
 dl.tags dd pre { margin: 0; }
 ul.params { list-style: none; margin: 0; padding: 0; }
 ul.params li { padding: 2px 0; }
+ul.doc-list { margin: 8px 0; padding-left: 22px; }
+ul.doc-list li { padding: 2px 0; }
 .param-name { font-weight: 600; }
 .param-type { color: var(--text-muted); }
 

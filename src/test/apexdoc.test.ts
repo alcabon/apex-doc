@@ -182,6 +182,43 @@ public class Examples {
     assert.equal(doc?.example, 'List<Account> a = [SELECT Id FROM Account];\n    System.debug(a);');
 });
 
+test('strips a Markdown code fence from @example', () => {
+    // The renderers add their own fencing, so a fence left in the model nests.
+    const info = parseClass(`
+public class Fenced {
+    /**
+     * @description Does a thing.
+     * @example
+     * \`\`\`
+     * Contact[] rows = [SELECT Id FROM Contact];
+     * System.debug(rows.size());
+     * \`\`\`
+     */
+    public void run() {}
+}
+`);
+
+    assert.equal(
+        info.methods[0].doc?.example,
+        'Contact[] rows = [SELECT Id FROM Contact];\nSystem.debug(rows.size());',
+    );
+});
+
+test('keeps an unfenced @example exactly as written', () => {
+    const info = parseClass(`
+public class Plain {
+    /**
+     * @example
+     * Integer a = 1;
+     *     Integer b = 2;
+     */
+    public void run() {}
+}
+`);
+
+    assert.equal(info.methods[0].doc?.example, 'Integer a = 1;\n    Integer b = 2;');
+});
+
 test('documents interfaces, enums and nested types', () => {
     const file = parseApexSource(
         `
@@ -544,6 +581,58 @@ test('renders Markdown with summary tables and working anchors', () => {
     for (const anchor of anchors) {
         assert.ok(headings.has(anchor), `dangling anchor #${anchor}`);
     }
+});
+
+const RICH = `
+public class Rich {
+    /**
+     * @description First paragraph of the explanation.
+     *
+     * Second paragraph, after a blank line.
+     *
+     * Two rules keep the result predictable:
+     *
+     * * A bullet whose text wraps onto
+     *   a second line.
+     * * A second bullet.
+     *
+     * @param fieldName API name of the field. The description wraps across
+     * several source lines and must not break the list item.
+     * @return A value.
+     */
+    public String run(String fieldName) {
+        return null;
+    }
+}
+`;
+
+test('renders multi-paragraph descriptions and bullet lists as HTML', () => {
+    const page = renderHtml(projectOf(RICH, 'Rich.cls'))
+        .find((p) => p.fileName === 'Rich.html')!.content;
+
+    // Scope to the content area: the sidebar has list items of its own.
+    const html = page.slice(page.indexOf('<main>'), page.indexOf('</main>'));
+
+    assert.equal(html.match(/<p>/g)?.length, 3, 'three paragraphs before the list');
+    assert.ok(html.includes('<ul class="doc-list">'), 'bullets become a list');
+    assert.equal(html.match(/<li>/g)?.length, 3, 'two bullets plus the parameter');
+
+    // A wrapped bullet is one item, not two, and keeps a space at the join.
+    assert.ok(html.includes('<li>A bullet whose text wraps onto a second line.</li>'));
+    // Literal asterisks must not survive into the prose.
+    assert.equal(html.includes('<p>* A bullet'), false);
+});
+
+test('keeps Markdown list items on a single line', () => {
+    const md = renderMarkdown(projectOf(RICH, 'Rich.cls'))
+        .find((page) => page.fileName === 'Rich.md')!.content;
+
+    const paramLine = md
+        .split('\n')
+        .find((line) => line.startsWith('- `fieldName`'))!;
+
+    assert.ok(paramLine.includes('must not break the list item.'), 'wrapped text is kept');
+    assert.equal(paramLine.includes('\n'), false, 'and folded onto one line');
 });
 
 test('renders an HTML site with a page per type', () => {

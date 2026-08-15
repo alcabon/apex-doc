@@ -81,11 +81,28 @@ function joinBlock(lines: string[]): string {
     return lines.join('\n').replace(/^\s+/, '').replace(/\s+$/, '');
 }
 
-/** `@example` is code: keep the line breaks and the relative indentation. */
+/** Opening or closing line of a Markdown code fence, language optional. */
+const CODE_FENCE = /^\s*```+\s*\w*\s*$/;
+
+/**
+ * `@example` is code: keep the line breaks and the relative indentation.
+ *
+ * Authors commonly wrap the body in a Markdown code fence. The renderers add
+ * their own fencing, so a fence left in the model would nest — strip it here
+ * and the model holds nothing but the code.
+ */
 function joinCode(lines: string[]): string {
     const kept = [...lines];
     while (kept.length && kept[0].trim() === '') kept.shift();
     while (kept.length && kept[kept.length - 1].trim() === '') kept.pop();
+
+    if (kept.length >= 2 && CODE_FENCE.test(kept[0]) && CODE_FENCE.test(kept[kept.length - 1])) {
+        kept.shift();
+        kept.pop();
+        while (kept.length && kept[0].trim() === '') kept.shift();
+        while (kept.length && kept[kept.length - 1].trim() === '') kept.pop();
+    }
+
     if (kept.length === 0) return '';
 
     const indents = kept

@@ -288,6 +288,33 @@ lines — every line up to the next tag belongs to it:
 Inline `{@link SomeType}` becomes a cross-reference when the type is part of
 the same run, and inline `` `code` `` is rendered as code.
 
+Descriptions are treated as light Markdown: a blank line starts a new
+paragraph, and a line beginning with `*` or `-` starts a bullet, which may wrap
+onto indented continuation lines.
+
+```apex
+/**
+ * @description Groups records by a field value.
+ *
+ * Two rules keep the result predictable:
+ *
+ * * A record whose field is null lands under a null key rather than
+ *   being dropped.
+ * * Keys compare with `equals`, so Id and Decimal fields behave.
+ *
+ * @example
+ * ```
+ * Map<String, List<SObject>> byAccount =
+ *     SObjectGrouper.groupByField('AccountId', contacts);
+ * ```
+ */
+```
+
+Wrapping an `@example` in a Markdown code fence is optional — the fence is
+stripped, since the renderers add their own. Tag bodies that wrap across
+several source lines are folded back onto one line where the output needs it,
+such as inside a Markdown list item.
+
 Unrecognised tags are kept in the model (`unknownTags`) rather than dropped, so
 nothing you write is silently lost.
 
