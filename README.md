@@ -27,9 +27,25 @@ Building it from source, the toolchain and the internals are covered in
 - Node.js 22 or newer
 - The Apex you want documented, as `.cls` files
 
-## Quick start
+## Install
 
 ```bash
+npm install -g @acabon/apexdoc     # global apexdoc command
+npx @acabon/apexdoc --help         # or run it without installing
+npm install -D @acabon/apexdoc     # or as a project dev dependency
+```
+
+Then:
+
+```bash
+apexdoc generate force-app -o docs -f html
+```
+
+## Quick start from source
+
+```bash
+git clone https://github.com/alcabon/apex-doc.git
+cd apex-doc
 npm install
 npm run build          # compiles src/**/*.ts to dist/
 
@@ -355,8 +371,7 @@ orgs whose conventions still call for it.
 
 ## Using it as a library
 
-Everything the CLI does is available programmatically from
-`dist/apexdoc/index.js`:
+Everything the CLI does is available programmatically:
 
 ```ts
 import {
@@ -365,7 +380,7 @@ import {
     validateProject,
     renderHtml,
     annotateSource,
-} from './dist/apexdoc/index.js';
+} from '@acabon/apexdoc';
 
 const project = filterByVisibility(loadProject(['force-app'], 'My Org'), 'public');
 const validation = validateProject(project);

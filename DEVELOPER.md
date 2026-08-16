@@ -290,11 +290,77 @@ must do the same, or every line of every annotated file shows up in the diff.
 
 ```bash
 npm run rebuild
-npm pack            # produces apex-doc-1.0.0.tgz containing only dist/
+npm pack            # produces acabon-apexdoc-1.0.0.tgz
 ```
 
 The `files` field narrows the tarball to `dist/apexdoc.js` and `dist/apexdoc/`,
-so the compiled tests stay out of it; `main`, `types` and `bin` all point inside
-that set. npm adds `package.json`, `README.md` and `LICENSE.txt` on its own
-regardless. `npm pack --dry-run` lists what would ship without writing the
-tarball.
+so the compiled tests stay out of it; `main`, `types`, `exports` and `bin` all
+point inside that set. npm adds `package.json`, `README.md` and `LICENSE.txt` on
+its own regardless. `npm pack --dry-run` lists what would ship without writing
+the tarball.
+
+## Publishing to npm
+
+The package is published as **`@acabon/apexdoc`**.
+
+### One-time setup
+
+```bash
+npm login                       # the account must own the @acabon scope
+npm whoami                      # confirm
+```
+
+A scope maps to an npm username or org. `@acabon` works as a personal scope if
+the account is named `acabon`; for anything else, create the org first.
+
+### Every release
+
+```bash
+npm version patch               # or minor / major — commits and tags
+git push --follow-tags
+npm publish                     # add --otp=123456 if 2FA is on
+```
+
+`npm version` refuses to run on a dirty tree, which is the intended guard.
+Publish only from a clean `main` that CI has gone green on.
+
+### Two settings that matter
+
+`publishConfig.access` is set to `public`. **Scoped packages default to
+restricted**, so without it the first publish fails with a 402 asking for a paid
+plan — the single most common way a first scoped publish goes wrong.
+
+`prepublishOnly` runs `npm run clean && npm test`. `dist/` is gitignored, so
+whatever happens to be on disk is what gets packed; that hook makes a stale or
+missing build impossible to publish. It does not run on `npm install`.
+
+### Verify before you publish
+
+```bash
+npm publish --dry-run           # name, version, file list, sizes
+```
+
+Better still, install the tarball as a consumer would — this is what catches a
+broken `bin`, a missing shebang or an `exports` map that does not resolve:
+
+```bash
+npm pack --pack-destination /tmp/consumer
+cd /tmp/consumer && npm init -y && npm install ./acabon-apexdoc-1.0.0.tgz
+./node_modules/.bin/apexdoc --help
+node -e "import('@acabon/apexdoc').then(m => console.log(Object.keys(m).length, 'exports'))"
+```
+
+### Points of no return
+
+A published `name@version` is permanent — the same version can never be
+republished, even after `npm unpublish`. Unpublishing is only allowed within 72
+hours and only if nothing depends on the package; after that the route is
+`npm deprecate`. So bump the version rather than trying to correct one in place.
+
+### Optional: publish from CI with provenance
+
+Publishing from a GitHub Actions workflow with `--provenance` and
+`permissions: id-token: write` gets the package a verified badge on npmjs.com
+linking the tarball to the exact commit and workflow run that produced it. It
+needs an `NPM_TOKEN` (automation type, so it bypasses 2FA) in the repository
+secrets.

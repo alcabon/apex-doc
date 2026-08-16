@@ -1,10 +1,38 @@
 {
-  "name": "apex-doc",
+  "name": "@acabon/apexdoc",
   "version": "1.0.0",
   "description": "ApexDoc/JavaDoc style documentation generator for Salesforce Apex",
+  "keywords": [
+    "apex",
+    "salesforce",
+    "apexdoc",
+    "javadoc",
+    "documentation",
+    "documentation-generator",
+    "docs",
+    "sfdx",
+    "cli"
+  ],
+  "homepage": "https://github.com/alcabon/apex-doc#readme",
+  "bugs": {
+    "url": "https://github.com/alcabon/apex-doc/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alcabon/apex-doc.git"
+  },
+  "author": "Alain Cabon",
+  "license": "ISC",
   "type": "module",
   "main": "dist/apexdoc/index.js",
   "types": "dist/apexdoc/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/apexdoc/index.d.ts",
+      "default": "./dist/apexdoc/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "apexdoc": "dist/apexdoc.js"
   },
@@ -16,6 +44,9 @@
   "engines": {
     "node": ">=22"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
@@ -25,10 +56,9 @@
     "apexdoc": "node dist/apexdoc.js",
     "docs": "npm run build && node dist/apexdoc.js generate examples -o apexdocs -t \"Apex Demo\"",
     "check": "npm run build && node dist/apexdoc.js check examples --access private",
-    "test": "npm run build && node --test \"dist/test/*.test.js\""
+    "test": "npm run build && node --test \"dist/test/*.test.js\"",
+    "prepublishOnly": "npm run clean && npm test"
   },
-  "author": "Alain Cabon",
-  "license": "ISC",
   "devDependencies": {
     "@types/node": "^24.7.2",
     "typescript": "^5.9.3"
