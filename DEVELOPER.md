@@ -340,15 +340,31 @@ missing build impossible to publish. It does not run on `npm install`.
 npm publish --dry-run           # name, version, file list, sizes
 ```
 
-Better still, install the tarball as a consumer would — this is what catches a
-broken `bin`, a missing shebang or an `exports` map that does not resolve:
+That reports what *would* ship but never contacts the registry — nothing is
+uploaded and `npm install` still 404s afterwards. It does not prove the package
+works once installed.
+
+For that, [`scripts/verify-package.mjs`](scripts/verify-package.mjs) packs the
+tarball and installs it the way a consumer would:
 
 ```bash
-npm pack --pack-destination /tmp/consumer
-cd /tmp/consumer && npm init -y && npm install ./acabon-apexdoc-1.0.0.tgz
-./node_modules/.bin/apexdoc --help
-node -e "import('@acabon/apexdoc').then(m => console.log(Object.keys(m).length, 'exports'))"
+npm run verify:package              # local install into a throwaway project
+npm run verify:package -- --global  # also rehearse `npm install -g`
 ```
+
+It builds, packs, installs into a clean consumer project under `.tmp/verify/`,
+runs the `apexdoc` command through its generated shim, drives it over
+[examples/](examples/), and imports the package entry point. That sequence is
+what catches a broken `bin`, a missing shebang or an `exports` map that does not
+resolve — the failures that surface only after publishing, when the version
+number is already spent.
+
+Three things it deliberately does *not* do. It never hardcodes the version: the
+tarball name comes from `npm pack --json`, so it keeps working across
+`npm version`. It writes only inside `.tmp/`, which is gitignored. And the
+global install is opt-in and wrapped in a `finally` that uninstalls, so a
+failure part-way through cannot leave a stray global package behind — the
+reason not to put a bare `npm install -g` in a script you run repeatedly.
 
 ### Points of no return
 

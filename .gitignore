@@ -7,6 +7,10 @@ dist/
 # Generated documentation — regenerate with `npm run docs`
 apexdocs/
 
+# Local scratch: packed tarballs and the throwaway consumer project built by
+# `npm run verify:package`
+.tmp/
+
 # Backups written by `apexdoc annotate --backup`
 *.cls.bak
 

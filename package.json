@@ -57,6 +57,7 @@
     "docs": "npm run build && node dist/apexdoc.js generate examples -o apexdocs -t \"Apex Demo\"",
     "check": "npm run build && node dist/apexdoc.js check examples --access private",
     "test": "npm run build && node --test \"dist/test/*.test.js\"",
+    "verify:package": "node scripts/verify-package.mjs",
     "prepublishOnly": "npm run clean && npm test"
   },
   "devDependencies": {
